@@ -8,6 +8,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.webdriver.chrome.service import Service
 from datetime import datetime
 import time
 
@@ -38,7 +39,9 @@ options.add_argument("--ignore-ssl-errors")
 options.add_argument("--disable-web-security")
 
 #link to web driver
-driver=webdriver.Chrome(executable_path=r"D:\chromedriver.exe", options=options)
+chromedriver_path = r"D:\chromedriver.exe"
+service = Service(executable_path=chromedriver_path)
+driver = webdriver.Chrome(service=service, options=options)
 
 DB_PATH = r"D:\AR_data.db"
 
@@ -183,6 +186,13 @@ def parse_car_page(driver, url, car_id):
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
     car_data = {}
+    
+    current_url = driver.current_url
+    if current_url != url:
+        print(f"🔃 Redirect detected: {url} → {current_url}.❌ Entry Deleted.")
+        car_data['brand'] = 'DELETED'
+        update_car_data(car_id, car_data, 'brand', car_data['brand'])
+        return
     
     try:
         car_data["brand"] = soup.find("span", text="Марка, модель, рік").find_next("span", class_="d-link__name").text.split()[0]
